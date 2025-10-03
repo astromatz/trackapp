@@ -1,0 +1,565 @@
+<!DOCTYPE html>\
+<html lang="de">\
+<head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width, initial-scale=1.0">\
+<meta name="theme-color" content="#667eea">\
+<meta name="description" content="Tracke deine Gesundheitswerte: Gewicht, Muskelanteil, Fettanteil und BMI">\
+<meta name="apple-mobile-web-app-capable" content="yes">\
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\
+<meta name="apple-mobile-web-app-title" content="Gesundheitstracker">\
+<link rel="manifest" href="javascript:void(0)">\
+<link rel="apple-touch-icon" href="javascript:void(0)">\
+<title>Gesundheitstracker</title>\
+<script src="[https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js](https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js)"></script>\
+<style>\
+\* {\
+margin: 0;\
+padding: 0;\
+box-sizing: border-box;\
+}
+
+```
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+min-height: 100vh;
+padding: 10px;
+}
+
+.container {
+max-width: 500px;
+margin: 0 auto;
+}
+
+.card {
+background: white;
+border-radius: 20px;
+padding: 20px;
+margin-bottom: 15px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1 {
+color: #667eea;
+font-size: 24px;
+margin-bottom: 15px;
+text-align: center;
+}
+
+h2 {
+color: #333;
+font-size: 20px;
+margin-bottom: 15px;
+}
+
+.nav-tabs {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 6px;
+margin-bottom: 20px;
+}
+
+.tab-btn {
+padding: 10px 5px;
+border: none;
+background: #e0e7ff;
+color: #667eea;
+border-radius: 10px;
+font-size: 12px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.tab-btn.active {
+background: #667eea;
+color: white;
+}
+
+.tab-content {
+display: none;
+}
+
+.tab-content.active {
+display: block;
+}
+
+.input-group {
+margin-bottom: 20px;
+}
+
+label {
+display: block;
+color: #555;
+font-weight: 600;
+margin-bottom: 8px;
+font-size: 14px;
+}
+
+input[type="number"],
+select {
+width: 100%;
+padding: 15px;
+border: 2px solid #e0e7ff;
+border-radius: 10px;
+font-size: 18px;
+transition: border 0.3s;
+background: white;
+}
+
+input[type="number"]:focus,
+select:focus {
+outline: none;
+border-color: #667eea;
+}
+
+.btn {
+width: 100%;
+padding: 18px;
+border: none;
+border-radius: 15px;
+font-size: 18px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.3s;
+margin-top: 10px;
+}
+
+.btn-primary {
+background: linear-gradient(135deg, #f6a04d 0%, #f97316 100%);
+color: white;
+box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+}
+
+.btn-primary:active {
+transform: scale(0.98);
+}
+
+.btn-secondary {
+background: #e0e7ff;
+color: #667eea;
+font-size: 14px;
+padding: 12px;
+}
+
+.time-buttons {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin-bottom: 15px;
+}
+
+.time-btn {
+padding: 12px;
+border: 2px solid #e0e7ff;
+background: white;
+color: #667eea;
+border-radius: 10px;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s;
+}
+
+.time-btn.active {
+background: #667eea;
+color: white;
+border-color: #667eea;
+}
+
+.custom-range {
+display: none;
+margin-top: 15px;
+padding: 15px;
+background: #f8fafc;
+border-radius: 10px;
+}
+
+.custom-range.active {
+display: block;
+}
+
+.custom-range input[type="date"] {
+width: 100%;
+padding: 12px;
+border: 2px solid #e0e7ff;
+border-radius: 8px;
+margin-bottom: 10px;
+font-size: 14px;
+}
+
+.chart-container {
+margin: 20px 0;
+background: white;
+padding: 15px;
+border-radius: 15px;
+position: relative;
+}
+
+.chart-title {
+color: #667eea;
+font-size: 16px;
+font-weight: 700;
+margin-bottom: 10px;
+text-align: center;
+}
+
+.healthy-range-label {
+position: absolute;
+top: 45px;
+right: 20px;
+font-size: 10px;
+color: #22c55e;
+background: rgba(34, 197, 94, 0.1);
+padding: 4px 8px;
+border-radius: 5px;
+}
+
+.data-table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 15px;
+font-size: 11px;
+overflow-x: auto;
+display: block;
+}
+
+.data-table thead,
+.data-table tbody {
+display: table;
+width: 100%;
+table-layout: fixed;
+}
+
+.data-table th {
+background: #667eea;
+color: white;
+padding: 10px 3px;
+font-size: 11px;
+}
+
+.data-table td {
+padding: 10px 3px;
+border-bottom: 1px solid #e0e7ff;
+text-align: center;
+font-size: 11px;
+}
+
+.data-table tr:last-child td {
+border-bottom: none;
+}
+
+.delete-btn {
+background: #ef4444;
+color: white;
+border: none;
+padding: 5px 8px;
+border-radius: 5px;
+font-size: 10px;
+cursor: pointer;
+}
+
+.settings-input {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 15px;
+}
+
+.settings-input label {
+margin: 0;
+flex: 1;
+}
+
+.settings-input input,
+.settings-input select {
+flex: 2;
+}
+
+.info-box {
+background: #e0e7ff;
+padding: 15px;
+border-radius: 10px;
+margin-bottom: 15px;
+font-size: 13px;
+color: #555;
+}
+
+.export-buttons {
+display: flex;
+gap: 10px;
+}
+
+.export-buttons .btn-secondary {
+flex: 1;
+font-size: 12px;
+padding: 10px;
+}
+
+input[type="file"] {
+display: none;
+}
+
+.no-data {
+text-align: center;
+color: #999;
+padding: 30px;
+font-size: 14px;
+}
+
+.modal {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0,0,0,0.5);
+z-index: 1000;
+justify-content: center;
+align-items: center;
+}
+
+.modal.active {
+display: flex;
+}
+
+.modal-content {
+background: white;
+padding: 30px;
+border-radius: 20px;
+max-width: 400px;
+margin: 20px;
+text-align: center;
+}
+
+.modal-buttons {
+display: flex;
+gap: 10px;
+margin-top: 20px;
+}
+
+.modal-buttons button {
+flex: 1;
+padding: 12px;
+border: none;
+border-radius: 10px;
+font-weight: 600;
+cursor: pointer;
+}
+
+.modal-btn-cancel {
+background: #e0e7ff;
+color: #667eea;
+}
+
+.modal-btn-delete {
+background: #ef4444;
+color: white;
+}
+
+.install-prompt {
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
+padding: 15px;
+border-radius: 15px;
+margin-bottom: 15px;
+text-align: center;
+display: none;
+}
+
+.install-prompt.show {
+display: block;
+}
+
+.install-prompt button {
+background: white;
+color: #667eea;
+border: none;
+padding: 10px 20px;
+border-radius: 10px;
+font-weight: 600;
+margin-top: 10px;
+cursor: pointer;
+}
+
+/* Mobile Optimierungen */
+@media (max-width: 400px) {
+    h1 {
+        font-size: 20px;
+    }
+    
+    .tab-btn {
+        font-size: 11px;
+        padding: 8px 3px;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    .time-btn {
+        font-size: 11px;
+        padding: 10px;
+    }
+}
+</style>
+```
+
+</head>\
+<body>\
+<div class="container">
+
+```
+<!-- Install Prompt -->
+<div id="installPrompt" class="install-prompt">
+    <div>📱 Installiere die App auf deinem Gerät!</div>
+    <button onclick="installApp()">Jetzt installieren</button>
+    <button onclick="dismissInstall()" style="background: transparent; color: white; margin-left: 10px;">Später</button>
+</div>
+
+<div class="card">
+<h1>🏃‍♂️ Gesundheitstracker</h1>
+
+<div class="nav-tabs">
+<button class="tab-btn active" onclick="switchTab('eingabe')">Eingabe</button>
+<button class="tab-btn" onclick="switchTab('ergebnisse')">Ergebnisse</button>
+<button class="tab-btn" onclick="switchTab('daten')">Daten</button>
+<button class="tab-btn" onclick="switchTab('einstellungen')">Einstellungen</button>
+</div>
+
+<!-- EINGABE TAB -->
+<div id="eingabe" class="tab-content active">
+<h2>Hallo!</h2>
+<p style="margin-bottom: 20px; color: #666; font-size: 14px;">Bitte gib deine Werte von heute ein:</p>
+
+<div class="input-group">
+<label>Gewicht (kg)</label>
+<input type="number" id="gewicht" step="0.1" placeholder="75.5">
+</div>
+
+<div class="input-group">
+<label>Muskelanteil (%)</label>
+<input type="number" id="muskelanteil" step="0.1" placeholder="35.5">
+</div>
+
+<div class="input-group">
+<label>Fettanteil (%)</label>
+<input type="number" id="fettanteil" step="0.1" placeholder="18.5">
+</div>
+
+<button class="btn btn-primary" onclick="saveMeasurement()">Absenden</button>
+</div>
+
+<!-- ERGEBNISSE TAB -->
+<div id="ergebnisse" class="tab-content">
+<h2>Ergebnisse!</h2>
+
+<div class="time-buttons">
+<button class="time-btn active" onclick="setTimeRange(7)">Letzte 7 Tage</button>
+<button class="time-btn" onclick="setTimeRange(30)">Letzter Monat</button>
+<button class="time-btn" onclick="setTimeRange(90)">Letzte 3 Monate</button>
+<button class="time-btn" onclick="setTimeRange(365)">Letztes Jahr</button>
+<button class="time-btn" onclick="toggleCustomRange()" id="customBtn">Individuell</button>
+</div>
+
+<div class="custom-range" id="customRange">
+<label>Von:</label>
+<input type="date" id="dateFrom">
+<label>Bis:</label>
+<input type="date" id="dateTo">
+<button class="btn btn-secondary" onclick="applyCustomRange()">Anwenden</button>
+</div>
+
+<div class="chart-container">
+<div class="chart-title">Gewicht (kg)</div>
+<canvas id="chartGewicht"></canvas>
+</div>
+
+<div class="chart-container">
+<div class="chart-title">Muskelanteil (%)</div>
+<div class="healthy-range-label" id="muskelLabel" style="display:none;">✓ Gesunder Bereich</div>
+<canvas id="chartMuskel"></canvas>
+</div>
+
+<div class="chart-container">
+<div class="chart-title">Fettanteil (%)</div>
+<div class="healthy-range-label" id="fettLabel" style="display:none;">✓ Gesunder Bereich</div>
+<canvas id="chartFett"></canvas>
+</div>
+
+<div class="chart-container">
+<div class="chart-title">BMI</div>
+<div class="healthy-range-label" id="bmiLabel" style="display:none;">✓ Gesunder Bereich</div>
+<canvas id="chartBMI"></canvas>
+</div>
+</div>
+
+<!-- DATEN TAB -->
+<div id="daten" class="tab-content">
+<h2>Historische Daten</h2>
+
+<div class="export-buttons">
+<button class="btn btn-secondary" onclick="exportCSV()">📥 Export</button>
+<button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">📤 Import</button>
+<input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
+</div>
+
+<div id="dataTableContainer"></div>
+</div>
+
+<!-- EINSTELLUNGEN TAB -->
+<div id="einstellungen" class="tab-content">
+<h2>Einstellungen</h2>
+
+<div class="info-box">
+<strong>Hinweis:</strong> Die Angaben werden für die Berechnung und Bewertung deiner Gesundheitswerte benötigt.
+</div>
+
+<div class="settings-input">
+<label>Geschlecht:</label>
+<select id="geschlecht">
+<option value="">Bitte wählen</option>
+<option value="mann">Mann</option>
+<option value="frau">Frau</option>
+</select>
+</div>
+
+<div class="settings-input">
+<label>Körpergröße (cm):</label>
+<input type="number" id="groesse" step="1" placeholder="175">
+</div>
+
+<button class="btn btn-secondary" onclick="saveSettings()">Speichern</button>
+
+<div class="info-box" style="margin-top: 20px;">
+<strong>Daten löschen:</strong><br>
+Alle gespeicherten Messungen werden unwiderruflich gelöscht.
+</div>
+
+<button class="btn btn-secondary" style="background: #fee; color: #ef4444;" onclick="showDeleteModal()">🗑️ Alle Daten löschen</button>
+</div>
+</div>
+</div>
+
+<!-- Modal für Bestätigung -->
+<div id="deleteModal" class="modal">
+<div class="modal-content">
+<h2 style="color: #ef4444; margin-bottom: 15px;">⚠️ Achtung!</h2>
+<p style="color: #666; margin-bottom: 20px;">Möchtest du wirklich alle Daten unwiderruflich löschen?</p>
+<div class="modal-buttons">
+<button class="modal-btn-cancel" onclick="hideDeleteModal()">Abbrechen</button>
+<button class="modal-btn-delete" onclick="confirmDeleteAllData()">Löschen</button>
+</div>
+</div>
+</div>
+
+<script src="app.js"></script>
+```
+
+</body>\
+</html>
