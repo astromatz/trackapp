@@ -1,11 +1,11 @@
-const CACHE_NAME = 'gesundheitstracker-v1';
+const CACHE_NAME = 'gesundheitstracker-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  './',
+  './index.html',
+  './app.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js'
 ];
 
@@ -67,4 +67,5 @@ self.addEventListener('fetch', (event) => {
         });
       })
   );
+
 });
