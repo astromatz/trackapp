@@ -1,6 +1,6 @@
 {
-  "name": "Gesundheitstracker",
-  "short_name": "Health",
+  "name": "TrackApp - Gesundheitstracker",
+  "short_name": "TrackApp",
   "description": "Tracke deine Gesundheitswerte: Gewicht, Muskelanteil, Fettanteil und BMI",
   "start_url": "/",
   "display": "standalone",
@@ -8,6 +8,21 @@
   "theme_color": "#667eea",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "icon-120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
