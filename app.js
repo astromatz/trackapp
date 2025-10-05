@@ -298,9 +298,20 @@ function updateCharts() {
         return;
     }
     
+    // Labels mit Jahr für bessere Zuordnung
     const labels = data.map(m => {
         const d = new Date(m.datum);
-        return d.getDate() + '.' + (d.getMonth() + 1) + '.';
+        const day = d.getDate();
+        const month = d.getMonth() + 1;
+        const year = d.getFullYear();
+        
+        // Zeige Jahr nur wenn Daten aus mehreren Jahren vorhanden
+        const years = [...new Set(data.map(item => new Date(item.datum).getFullYear()))];
+        if (years.length > 1) {
+            return `${day}.${month}.${year}`;
+        } else {
+            return `${day}.${month}.`;
+        }
     });
     
     // Labels für gesunde Bereiche anzeigen/verstecken
@@ -329,7 +340,8 @@ function updateCharts() {
                     tension: 0.4,
                     fill: true,
                     pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointHoverRadius: 6,
+                    spanGaps: false
                 }]
             },
             options: {
@@ -344,7 +356,11 @@ function updateCharts() {
                         ticks: { font: { size: 11 } }
                     },
                     x: {
-                        ticks: { font: { size: 10 } }
+                        ticks: { 
+                            font: { size: 10 },
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
                     }
                 }
             },
