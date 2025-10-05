@@ -1,43 +1,23 @@
-let measurements = [];
-let currentTimeRange = 7;
-let charts = {};
-let groesse = 175;
-let geschlecht = '';
-let deferredPrompt;
-
-// WHO Gesundheitsbereiche
-const healthRanges = {
-    bmi: {
-        mann: { min: 18.5, max: 25 },
-        frau: { min: 18.5, max: 25 }
-    },
-    muskel: {
-        mann: { min: 33, max: 39 },
-        frau: { min: 28, max: 34 }
-    },
-    fett: {
-        mann: { min: 8, max: 20 },
-        frau: { min: 21, max: 33 }
-    }
-};
-
-// Service Worker registrieren
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('Service Worker registriert'))
             .catch(err => console.log('Service Worker Fehler:', err));
     });
 }
 
 // PWA Install Prompt
+let deferredPrompt;
+const installPrompt = document.getElementById('installPrompt');
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     
-    // Zeige Install Prompt nur wenn noch nicht installiert
+    // Prüfe ob bereits installiert oder dismissed
     if (!localStorage.getItem('installDismissed')) {
-        document.getElementById('installPrompt').classList.add('show');
+        installPrompt.classList.add('show');
     }
 });
 
@@ -49,426 +29,500 @@ function installApp() {
                 console.log('App installiert');
             }
             deferredPrompt = null;
-            document.getElementById('installPrompt').classList.remove('show');
+            installPrompt.classList.remove('show');
         });
     }
 }
 
 function dismissInstall() {
-    document.getElementById('installPrompt').classList.remove('show');
     localStorage.setItem('installDismissed', 'true');
+    installPrompt.classList.remove('show');
 }
+
+// Daten-Management
+let measurements = JSON.parse(localStorage.getItem('measurements')) || [];
+let settings = JSON.parse(localStorage.getItem('settings')) || {
+    geschlecht: '',
+    groesse: ''
+};
 
 // Initialisierung
-function init() {
-    loadData();
-    loadSettings();
-    setTodayAsDefault();
-    updateDataTable();
+document.addEventListener('DOMContentLoaded', () => {
+    // Setze heutiges Datum
+    document.getElementById('datum').valueAsDate = new Date();
+    
+    // Lade Einstellungen
+    document.getElementById('geschlecht').value = settings.geschlecht || '';
+    document.getElementById('groesse').value = settings.groesse || '';
+    
+    // Initialisiere Charts
     updateCharts();
-}
+    updateDataTable();
+});
 
-// Setze heutiges Datum als Standard
-function setTodayAsDefault() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('datum').value = today;
-}
-
-// Tab Wechsel
+// Tab-Wechsel
 function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    // Entferne active von allen Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
-    document.getElementById(tabName).classList.add('active');
+    // Aktiviere gewählten Tab
     event.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
     
+    // Update Charts wenn Ergebnisse-Tab geöffnet wird
     if (tabName === 'ergebnisse') {
-        setTimeout(() => updateCharts(), 100);
+        updateCharts();
     }
+    
+    // Update Tabelle wenn Daten-Tab geöffnet wird
     if (tabName === 'daten') {
         updateDataTable();
     }
-}
-
-// Daten aus LocalStorage laden
-function loadData() {
-    const data = localStorage.getItem('healthData');
-    measurements = data ? JSON.parse(data) : [];
-}
-
-// Daten in LocalStorage speichern
-function saveData() {
-    localStorage.setItem('healthData', JSON.stringify(measurements));
-}
-
-// Einstellungen laden
-function loadSettings() {
-    const savedGroesse = localStorage.getItem('groesse');
-    const savedGeschlecht = localStorage.getItem('geschlecht');
-    
-    if (savedGroesse) {
-        groesse = parseFloat(savedGroesse);
-        document.getElementById('groesse').value = groesse;
-    }
-    
-    if (savedGeschlecht) {
-        geschlecht = savedGeschlecht;
-        document.getElementById('geschlecht').value = geschlecht;
-    }
-}
-
-// Einstellungen speichern
-function saveSettings() {
-    const inputGroesse = document.getElementById('groesse').value;
-    const inputGeschlecht = document.getElementById('geschlecht').value;
-    
-    if (!inputGroesse || inputGroesse <= 0) {
-        alert('Bitte gib eine gültige Körpergröße ein.');
-        return;
-    }
-    
-    if (!inputGeschlecht) {
-        alert('Bitte wähle dein Geschlecht aus.');
-        return;
-    }
-    
-    groesse = parseFloat(inputGroesse);
-    geschlecht = inputGeschlecht;
-    
-    localStorage.setItem('groesse', groesse);
-    localStorage.setItem('geschlecht', geschlecht);
-    
-    alert('Einstellungen gespeichert!');
-    updateCharts();
 }
 
 // Messung speichern
 function saveMeasurement() {
     const datum = document.getElementById('datum').value;
     const gewicht = parseFloat(document.getElementById('gewicht').value);
-    const muskel = parseFloat(document.getElementById('muskelanteil').value);
-    const fett = parseFloat(document.getElementById('fettanteil').value);
+    const muskelanteil = parseFloat(document.getElementById('muskelanteil').value);
+    const fettanteil = parseFloat(document.getElementById('fettanteil').value);
     
-    if (!datum) {
-        alert('Bitte wähle ein Datum aus!');
-        return;
-    }
-    
-    if (!gewicht || !muskel || !fett) {
+    if (!datum || !gewicht || !muskelanteil || !fettanteil) {
         alert('Bitte fülle alle Felder aus!');
         return;
     }
     
-    // Prüfe ob bereits ein Eintrag für dieses Datum existiert
+    if (!settings.groesse) {
+        alert('Bitte gib zuerst deine Körpergröße in den Einstellungen an!');
+        switchTab('einstellungen');
+        return;
+    }
+    
+    // Berechne BMI
+    const groesseM = settings.groesse / 100;
+    const bmi = gewicht / (groesseM * groesseM);
+    
+    // Prüfe ob Datum bereits existiert
     const existingIndex = measurements.findIndex(m => m.datum === datum);
     
-    if (existingIndex !== -1) {
-        // Frage ob überschreiben
-        if (confirm(`Für den ${datum} existiert bereits ein Eintrag. Möchtest du ihn überschreiben?`)) {
-            measurements[existingIndex] = {
-                datum: datum,
-                gewicht: gewicht,
-                muskelanteil: muskel,
-                fettanteil: fett,
-                id: measurements[existingIndex].id
-            };
-        } else {
-            return;
-        }
+    const measurement = {
+        datum,
+        gewicht,
+        muskelanteil,
+        fettanteil,
+        bmi: parseFloat(bmi.toFixed(1))
+    };
+    
+    if (existingIndex >= 0) {
+        // Update existing
+        measurements[existingIndex] = measurement;
     } else {
-        // Neuen Eintrag hinzufügen
-        const measurement = {
-            datum: datum,
-            gewicht: gewicht,
-            muskelanteil: muskel,
-            fettanteil: fett,
-            id: Date.now()
-        };
+        // Add new
         measurements.push(measurement);
     }
     
-    saveData();
+    // Sortiere nach Datum
+    measurements.sort((a, b) => new Date(a.datum) - new Date(b.datum));
     
-    // Felder leeren (außer Datum)
+    // Speichern
+    localStorage.setItem('measurements', JSON.stringify(measurements));
+    
+    // Felder leeren
     document.getElementById('gewicht').value = '';
     document.getElementById('muskelanteil').value = '';
     document.getElementById('fettanteil').value = '';
     
-    alert('✅ Daten gespeichert!');
+    // Setze Datum auf morgen
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('datum').valueAsDate = tomorrow;
     
-    // Aktualisiere Tabelle falls im Daten-Tab
-    if (document.getElementById('daten').classList.contains('active')) {
-        updateDataTable();
-    }
+    alert('Messung gespeichert!');
+    updateCharts();
+    updateDataTable();
 }
 
-// Zeitraum setzen
+// Einstellungen speichern
+function saveSettings() {
+    const geschlecht = document.getElementById('geschlecht').value;
+    const groesse = parseFloat(document.getElementById('groesse').value);
+    
+    if (!geschlecht || !groesse) {
+        alert('Bitte fülle alle Felder aus!');
+        return;
+    }
+    
+    settings = { geschlecht, groesse };
+    localStorage.setItem('settings', JSON.stringify(settings));
+    
+    // Recalculate BMI for all measurements
+    measurements = measurements.map(m => {
+        const groesseM = groesse / 100;
+        const bmi = m.gewicht / (groesseM * groesseM);
+        return { ...m, bmi: parseFloat(bmi.toFixed(1)) };
+    });
+    
+    localStorage.setItem('measurements', JSON.stringify(measurements));
+    
+    alert('Einstellungen gespeichert!');
+    updateCharts();
+    updateDataTable();
+}
+
+// Zeitraum-Verwaltung
+let currentTimeRange = 7;
+let customRangeActive = false;
+
 function setTimeRange(days) {
     currentTimeRange = days;
-    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    customRangeActive = false;
+    
+    // Update Button States
+    document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
+    
+    // Hide custom range
     document.getElementById('customRange').classList.remove('active');
-    document.getElementById('customBtn').classList.remove('active');
+    
     updateCharts();
 }
 
-// Individuellen Zeitraum toggle
 function toggleCustomRange() {
     const customRange = document.getElementById('customRange');
-    const isActive = customRange.classList.toggle('active');
-    document.getElementById('customBtn').classList.toggle('active');
+    const customBtn = document.getElementById('customBtn');
     
-    if (isActive) {
-        document.querySelectorAll('.time-btn').forEach(b => {
-            if (b.id !== 'customBtn') b.classList.remove('active');
-        });
+    if (customRange.classList.contains('active')) {
+        customRange.classList.remove('active');
+        customBtn.classList.remove('active');
+        customRangeActive = false;
+    } else {
+        customRange.classList.add('active');
+        customBtn.classList.add('active');
         
-        // Setze Standardwerte
-        const today = new Date().toISOString().split('T')[0];
-        const lastMonth = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
-        document.getElementById('dateTo').value = today;
-        document.getElementById('dateFrom').value = lastMonth;
+        // Set default dates
+        const today = new Date();
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        
+        document.getElementById('dateTo').valueAsDate = today;
+        document.getElementById('dateFrom').valueAsDate = monthAgo;
     }
 }
 
-// Individuellen Zeitraum anwenden
 function applyCustomRange() {
-    const from = document.getElementById('dateFrom').value;
-    const to = document.getElementById('dateTo').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
     
-    if (!from || !to) {
+    if (!dateFrom || !dateTo) {
         alert('Bitte wähle beide Daten aus!');
         return;
     }
     
-    currentTimeRange = { from: from, to: to };
+    if (new Date(dateFrom) > new Date(dateTo)) {
+        alert('Das Start-Datum muss vor dem End-Datum liegen!');
+        return;
+    }
+    
+    customRangeActive = true;
+    
+    // Update button states
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        if (btn.id !== 'customBtn') {
+            btn.classList.remove('active');
+        }
+    });
+    
     updateCharts();
 }
 
-// Gefilterte Daten abrufen
+// Daten filtern nach Zeitraum
 function getFilteredData() {
-    if (typeof currentTimeRange === 'object') {
-        return measurements.filter(m => 
-            m.datum >= currentTimeRange.from && m.datum <= currentTimeRange.to
-        ).sort((a, b) => new Date(a.datum) - new Date(b.datum));
-    } else {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - currentTimeRange);
-        const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    if (measurements.length === 0) return [];
+    
+    let filtered;
+    
+    if (customRangeActive) {
+        const dateFrom = new Date(document.getElementById('dateFrom').value);
+        const dateTo = new Date(document.getElementById('dateTo').value);
+        dateTo.setHours(23, 59, 59, 999); // Include entire day
         
-        return measurements.filter(m => m.datum >= cutoffStr)
-            .sort((a, b) => new Date(a.datum) - new Date(b.datum));
-    }
-}
-
-// BMI berechnen
-function calculateBMI(gewicht) {
-    const groesseM = groesse / 100;
-    return gewicht / (groesseM * groesseM);
-}
-
-// Gesunden Bereich als Plugin erstellen
-function createHealthyRangePlugin(type) {
-    if (!geschlecht || !healthRanges[type] || !healthRanges[type][geschlecht]) {
-        return null;
+        filtered = measurements.filter(m => {
+            const mDate = new Date(m.datum);
+            return mDate >= dateFrom && mDate <= dateTo;
+        });
+    } else {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - currentTimeRange);
+        startDate.setHours(0, 0, 0, 0);
+        
+        filtered = measurements.filter(m => {
+            const mDate = new Date(m.datum);
+            return mDate >= startDate && mDate <= today;
+        });
     }
     
-    const range = healthRanges[type][geschlecht];
-    
-    return {
-        id: 'healthyRange',
-        beforeDatasetsDraw(chart) {
-            const { ctx, chartArea: { left, right }, scales: { y } } = chart;
-            const yMin = y.getPixelForValue(range.min);
-            const yMax = y.getPixelForValue(range.max);
-            
-            ctx.save();
-            ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
-            ctx.fillRect(left, yMax, right - left, yMin - yMax);
-            ctx.restore();
-        }
-    };
+    // Sortiere chronologisch
+    return filtered.sort((a, b) => new Date(a.datum) - new Date(b.datum));
 }
 
-// Charts aktualisieren
+// Charts
+let chartGewicht, chartMuskel, chartFett, chartBMI;
+
 function updateCharts() {
     const data = getFilteredData();
     
     if (data.length === 0) {
+        // Zeige "Keine Daten" Nachricht
+        ['chartGewicht', 'chartMuskel', 'chartFett', 'chartBMI'].forEach(id => {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'center';
+            ctx.fillText('Keine Daten verfügbar', canvas.width / 2, canvas.height / 2);
+        });
         return;
     }
     
-    // Labels mit Jahr für bessere Zuordnung
-    const labels = data.map(m => {
-        const d = new Date(m.datum);
-        const day = d.getDate();
-        const month = d.getMonth() + 1;
-        const year = d.getFullYear();
-        
-        // Zeige Jahr nur wenn Daten aus mehreren Jahren vorhanden
-        const years = [...new Set(data.map(item => new Date(item.datum).getFullYear()))];
-        if (years.length > 1) {
-            return `${day}.${month}.${year}`;
-        } else {
-            return `${day}.${month}.`;
-        }
-    });
+    // Extrahiere und formatiere Daten
+    const labels = data.map(m => formatDate(m.datum));
+    const gewichtData = data.map(m => m.gewicht);
+    const muskelData = data.map(m => m.muskelanteil);
+    const fettData = data.map(m => m.fettanteil);
+    const bmiData = data.map(m => m.bmi);
     
-    // Labels für gesunde Bereiche anzeigen/verstecken
-    ['muskel', 'fett', 'bmi'].forEach(type => {
-        const label = document.getElementById(type + 'Label');
-        if (label && geschlecht && healthRanges[type] && healthRanges[type][geschlecht]) {
-            label.style.display = 'block';
-        } else if (label) {
-            label.style.display = 'none';
-        }
-    });
+    // Gewicht Chart
+    updateChart('chartGewicht', chartGewicht, labels, gewichtData, 'Gewicht (kg)', '#3b82f6', null);
     
-    // Chart-Konfiguration
-    const chartConfig = (label, chartData, color, type) => {
-        const plugin = createHealthyRangePlugin(type);
+    // Muskelanteil Chart mit gesundem Bereich
+    const muskelRange = getHealthyMuscleRange();
+    updateChart('chartMuskel', chartMuskel, labels, muskelData, 'Muskelanteil (%)', '#10b981', muskelRange);
+    document.getElementById('muskelLabel').style.display = muskelRange ? 'block' : 'none';
+    
+    // Fettanteil Chart mit gesundem Bereich
+    const fettRange = getHealthyFatRange();
+    updateChart('chartFett', chartFett, labels, fettData, 'Fettanteil (%)', '#f59e0b', fettRange);
+    document.getElementById('fettLabel').style.display = fettRange ? 'block' : 'none';
+    
+    // BMI Chart mit gesundem Bereich
+    const bmiRange = { min: 18.5, max: 24.9 };
+    updateChart('chartBMI', chartBMI, labels, bmiData, 'BMI', '#8b5cf6', bmiRange);
+    document.getElementById('bmiLabel').style.display = 'block';
+}
+
+function updateChart(canvasId, chartInstance, labels, data, label, color, healthyRange) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Destroy existing chart
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+    
+    const datasets = [{
+        label: label,
+        data: data,
+        borderColor: color,
+        backgroundColor: color + '20',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 6
+    }];
+    
+    // Add healthy range if provided
+    if (healthyRange) {
+        datasets.push({
+            label: 'Gesunder Bereich (Min)',
+            data: new Array(data.length).fill(healthyRange.min),
+            borderColor: '#22c55e',
+            borderWidth: 1,
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 0
+        });
         
-        return {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: label,
-                    data: chartData,
-                    borderColor: color,
-                    backgroundColor: color + '20',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    spanGaps: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
+        datasets.push({
+            label: 'Gesunder Bereich (Max)',
+            data: new Array(data.length).fill(healthyRange.max),
+            borderColor: '#22c55e',
+            borderWidth: 1,
+            borderDash: [5, 5],
+            fill: '-1',
+            backgroundColor: '#22c55e10',
+            pointRadius: 0,
+            pointHoverRadius: 0
+        });
+    }
+    
+    const newChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                legend: {
+                    display: false
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        ticks: { font: { size: 11 } }
-                    },
-                    x: {
-                        ticks: { 
-                            font: { size: 10 },
-                            maxRotation: 45,
-                            minRotation: 0
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                return label + ': ' + context.parsed.y.toFixed(1);
+                            }
+                            return null;
                         }
+                    },
+                    filter: function(tooltipItem) {
+                        return tooltipItem.datasetIndex === 0;
                     }
                 }
             },
-            plugins: plugin ? [plugin] : []
-        };
-    };
-    
-    // Alte Charts zerstören
-    Object.values(charts).forEach(chart => {
-        if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 9
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
         }
     });
-    charts = {};
     
-    // Neue Charts erstellen
-    charts.gewicht = new Chart(
-        document.getElementById('chartGewicht'),
-        chartConfig('Gewicht (kg)', data.map(m => m.gewicht), '#667eea', null)
-    );
-    
-    charts.muskel = new Chart(
-        document.getElementById('chartMuskel'),
-        chartConfig('Muskelanteil (%)', data.map(m => m.muskelanteil), '#10b981', 'muskel')
-    );
-    
-    charts.fett = new Chart(
-        document.getElementById('chartFett'),
-        chartConfig('Fettanteil (%)', data.map(m => m.fettanteil), '#ef4444', 'fett')
-    );
-    
-    charts.bmi = new Chart(
-        document.getElementById('chartBMI'),
-        chartConfig('BMI', data.map(m => calculateBMI(m.gewicht)), '#f59e0b', 'bmi')
-    );
+    // Update global chart reference
+    if (canvasId === 'chartGewicht') chartGewicht = newChart;
+    if (canvasId === 'chartMuskel') chartMuskel = newChart;
+    if (canvasId === 'chartFett') chartFett = newChart;
+    if (canvasId === 'chartBMI') chartBMI = newChart;
 }
 
-// Datentabelle aktualisieren
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    return `${day}.${month}`;
+}
+
+// Gesunde Bereiche (WHO Standards)
+function getHealthyMuscleRange() {
+    if (!settings.geschlecht) return null;
+    
+    if (settings.geschlecht === 'mann') {
+        return { min: 33, max: 39 };
+    } else {
+        return { min: 28, max: 34 };
+    }
+}
+
+function getHealthyFatRange() {
+    if (!settings.geschlecht) return null;
+    
+    if (settings.geschlecht === 'mann') {
+        return { min: 10, max: 20 };
+    } else {
+        return { min: 18, max: 28 };
+    }
+}
+
+// Daten-Tabelle
 function updateDataTable() {
     const container = document.getElementById('dataTableContainer');
     
     if (measurements.length === 0) {
-        container.innerHTML = '<div class="no-data">Noch keine Daten vorhanden.<br>Gehe zur Eingabe und füge deine erste Messung hinzu!</div>';
+        container.innerHTML = '<div class="no-data">Noch keine Daten vorhanden</div>';
         return;
     }
     
-    const sorted = [...measurements].sort((a, b) => new Date(b.datum) - new Date(a.datum));
+    // Sortiere absteigend (neueste zuerst)
+    const sortedData = [...measurements].sort((a, b) => new Date(b.datum) - new Date(a.datum));
     
-    let html = '<table class="data-table"><thead><tr><th>Datum</th><th>Gewicht</th><th>Muskel</th><th>Fett</th><th>BMI</th><th></th></tr></thead><tbody>';
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Gewicht</th>
+                    <th>Muskel</th>
+                    <th>Fett</th>
+                    <th>BMI</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
     
-    sorted.forEach((m) => {
-        const bmi = calculateBMI(m.gewicht).toFixed(1);
-        const measurementId = m.id || (m.datum + '_' + m.gewicht);
-        html += `<tr>
-            <td>${m.datum}</td>
-            <td>${m.gewicht}</td>
-            <td>${m.muskelanteil}%</td>
-            <td>${m.fettanteil}%</td>
-            <td>${bmi}</td>
-            <td><button class="delete-btn" onclick="deleteMeasurement('${measurementId}')">Löschen</button></td>
-        </tr>`;
+    sortedData.forEach((m, index) => {
+        html += `
+            <tr>
+                <td>${formatDateFull(m.datum)}</td>
+                <td>${m.gewicht.toFixed(1)} kg</td>
+                <td>${m.muskelanteil.toFixed(1)}%</td>
+                <td>${m.fettanteil.toFixed(1)}%</td>
+                <td>${m.bmi.toFixed(1)}</td>
+                <td><button class="delete-btn" onclick="deleteMeasurement('${m.datum}')">Löschen</button></td>
+            </tr>
+        `;
     });
     
     html += '</tbody></table>';
     container.innerHTML = html;
 }
 
-// Einzelne Messung löschen
-function deleteMeasurement(measurementId) {
-    const index = measurements.findIndex(m => {
-        const id = m.id || (m.datum + '_' + m.gewicht);
-        return id == measurementId;
-    });
-    
-    if (index !== -1) {
-        measurements.splice(index, 1);
-        saveData();
+function formatDateFull(dateString) {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+function deleteMeasurement(datum) {
+    if (confirm('Möchtest du diese Messung wirklich löschen?')) {
+        measurements = measurements.filter(m => m.datum !== datum);
+        localStorage.setItem('measurements', JSON.stringify(measurements));
         updateDataTable();
         updateCharts();
     }
 }
 
-// Modal anzeigen
+// Alle Daten löschen
 function showDeleteModal() {
     document.getElementById('deleteModal').classList.add('active');
 }
 
-// Modal verstecken
 function hideDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
 }
 
-// Alle Daten löschen bestätigen
 function confirmDeleteAllData() {
     measurements = [];
-    saveData();
-    updateDataTable();
-    
-    // Charts zerstören
-    Object.values(charts).forEach(chart => {
-        if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
-        }
-    });
-    charts = {};
-    
+    localStorage.setItem('measurements', JSON.stringify(measurements));
     hideDeleteModal();
-    alert('Alle Daten wurden gelöscht.');
+    updateDataTable();
+    updateCharts();
+    alert('Alle Daten wurden gelöscht!');
 }
 
 // CSV Export
@@ -478,16 +532,17 @@ function exportCSV() {
         return;
     }
     
-    let csv = 'Datum,Gewicht,Muskelanteil,Fettanteil\n';
+    let csv = 'Datum,Gewicht (kg),Muskelanteil (%),Fettanteil (%),BMI\n';
+    
     measurements.forEach(m => {
-        csv += `${m.datum},${m.gewicht},${m.muskelanteil},${m.fettanteil}\n`;
+        csv += `${m.datum},${m.gewicht},${m.muskelanteil},${m.fettanteil},${m.bmi}\n`;
     });
     
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'gesundheitsdaten_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.download = `gesundheitsdaten_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 }
@@ -502,42 +557,41 @@ function importCSV(event) {
         const text = e.target.result;
         const lines = text.split('\n');
         
-        let imported = 0;
+        // Skip header
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
             
-            const parts = line.split(',');
-            if (parts.length >= 4) {
+            const [datum, gewicht, muskelanteil, fettanteil, bmi] = line.split(',');
+            
+            if (datum && gewicht && muskelanteil && fettanteil && bmi) {
                 const measurement = {
-                    datum: parts[0],
-                    gewicht: parseFloat(parts[1]),
-                    muskelanteil: parseFloat(parts[2]),
-                    fettanteil: parseFloat(parts[3]),
-                    id: Date.now() + i
+                    datum,
+                    gewicht: parseFloat(gewicht),
+                    muskelanteil: parseFloat(muskelanteil),
+                    fettanteil: parseFloat(fettanteil),
+                    bmi: parseFloat(bmi)
                 };
                 
-                // Duplikate vermeiden
-                const exists = measurements.some(m => 
-                    m.datum === measurement.datum && m.gewicht === measurement.gewicht
-                );
-                
-                if (!exists) {
+                // Prüfe ob Datum bereits existiert
+                const existingIndex = measurements.findIndex(m => m.datum === datum);
+                if (existingIndex >= 0) {
+                    measurements[existingIndex] = measurement;
+                } else {
                     measurements.push(measurement);
-                    imported++;
                 }
             }
         }
         
-        saveData();
+        // Sortiere nach Datum
+        measurements.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+        
+        localStorage.setItem('measurements', JSON.stringify(measurements));
         updateDataTable();
         updateCharts();
-        alert(`${imported} Einträge erfolgreich importiert!`);
+        alert('Daten erfolgreich importiert!');
     };
     
     reader.readAsText(file);
-    event.target.value = '';
+    event.target.value = ''; // Reset file input
 }
-
-// Bei Laden initialisieren
-window.onload = init;
