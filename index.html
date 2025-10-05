@@ -9,14 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TrackApp">
 
-<!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
-
-<!-- Standard Icons -->
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-
-<!-- Apple Touch Icons (iOS) -->
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=2">
 <link rel="apple-touch-icon" href="icon-180.png?v=2">
 
@@ -422,15 +417,14 @@ cursor: pointer;
 <body>
 <div class="container">
 
-<!-- Install Prompt -->
 <div id="installPrompt" class="install-prompt">
-    <div>📱 Installiere die App auf deinem Gerät!</div>
+    <div>Installiere die App auf deinem Geraet!</div>
     <button onclick="installApp()">Jetzt installieren</button>
-    <button onclick="dismissInstall()" style="background: transparent; color: white; margin-left: 10px;">Später</button>
+    <button onclick="dismissInstall()" style="background: transparent; color: white; margin-left: 10px;">Spaeter</button>
 </div>
 
 <div class="card">
-<h1>🏃‍♂️ Gesundheitstracker</h1>
+<h1>Gesundheitstracker</h1>
 
 <div class="nav-tabs">
 <button class="tab-btn active" onclick="switchTab('eingabe')">Eingabe</button>
@@ -439,7 +433,6 @@ cursor: pointer;
 <button class="tab-btn" onclick="switchTab('einstellungen')">Einstellungen</button>
 </div>
 
-<!-- EINGABE TAB -->
 <div id="eingabe" class="tab-content active">
 <h2>Hallo!</h2>
 <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Bitte gib deine Werte ein:</p>
@@ -467,7 +460,6 @@ cursor: pointer;
 <button class="btn btn-primary" onclick="saveMeasurement()">Absenden</button>
 </div>
 
-<!-- ERGEBNISSE TAB -->
 <div id="ergebnisse" class="tab-content">
 <h2>Ergebnisse!</h2>
 
@@ -494,78 +486,75 @@ cursor: pointer;
 
 <div class="chart-container">
 <div class="chart-title">Muskelanteil (%)</div>
-<div class="healthy-range-label" id="muskelLabel" style="display:none;">✓ Gesunder Bereich</div>
+<div class="healthy-range-label" id="muskelLabel" style="display:none;">Gesunder Bereich</div>
 <canvas id="chartMuskel"></canvas>
 </div>
 
 <div class="chart-container">
 <div class="chart-title">Fettanteil (%)</div>
-<div class="healthy-range-label" id="fettLabel" style="display:none;">✓ Gesunder Bereich</div>
+<div class="healthy-range-label" id="fettLabel" style="display:none;">Gesunder Bereich</div>
 <canvas id="chartFett"></canvas>
 </div>
 
 <div class="chart-container">
 <div class="chart-title">BMI</div>
-<div class="healthy-range-label" id="bmiLabel" style="display:none;">✓ Gesunder Bereich</div>
+<div class="healthy-range-label" id="bmiLabel" style="display:none;">Gesunder Bereich</div>
 <canvas id="chartBMI"></canvas>
 </div>
 </div>
 
-<!-- DATEN TAB -->
 <div id="daten" class="tab-content">
 <h2>Historische Daten</h2>
 
 <div class="export-buttons">
-<button class="btn btn-secondary" onclick="exportCSV()">📥 Export</button>
-<button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">📤 Import</button>
+<button class="btn btn-secondary" onclick="exportCSV()">Export</button>
+<button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">Import</button>
 <input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
 </div>
 
 <div id="dataTableContainer"></div>
 </div>
 
-<!-- EINSTELLUNGEN TAB -->
 <div id="einstellungen" class="tab-content">
 <h2>Einstellungen</h2>
 
 <div class="info-box">
-<strong>Hinweis:</strong> Die Angaben werden für die Berechnung und Bewertung deiner Gesundheitswerte benötigt.
+<strong>Hinweis:</strong> Die Angaben werden fuer die Berechnung und Bewertung deiner Gesundheitswerte benoetigt.
 </div>
 
 <div class="settings-input">
 <label>Geschlecht:</label>
 <select id="geschlecht">
-<option value="">Bitte wählen</option>
+<option value="">Bitte waehlen</option>
 <option value="mann">Mann</option>
 <option value="frau">Frau</option>
 </select>
 </div>
 
 <div class="settings-input">
-<label>Körpergröße (cm):</label>
+<label>Koerpergroesse (cm):</label>
 <input type="number" id="groesse" step="1" placeholder="175">
 </div>
 
 <button class="btn btn-secondary" onclick="saveSettings()">Speichern</button>
 
 <div class="info-box" style="margin-top: 20px;">
-<strong>Daten löschen:</strong><br>
-Alle gespeicherten Messungen werden unwiderruflich gelöscht.
+<strong>Daten loeschen:</strong><br>
+Alle gespeicherten Messungen werden unwiderruflich geloescht.
 </div>
 
-<button class="btn btn-secondary" style="background: #fee; color: #ef4444;" onclick="showDeleteModal()">🗑️ Alle Daten löschen</button>
+<button class="btn btn-secondary" style="background: #fee; color: #ef4444;" onclick="showDeleteModal()">Alle Daten loeschen</button>
 </div>
 </div>
 </div>
 
-<!-- Modal für Bestätigung -->
 <div id="deleteModal" class="modal">
 <div class="modal-content">
-<h2 style="color: #ef4444; margin-bottom: 15px;">⚠️ Achtung!</h2>
-<p style="color: #666; margin-bottom: 20px;">Möchtest du wirklich alle Daten unwiderruflich löschen?</p>
+<h2 style="color: #ef4444; margin-bottom: 15px;">Achtung!</h2>
+<p style="color: #666; margin-bottom: 20px;">Moechtest du wirklich alle Daten unwiderruflich loeschen?</p>
 <div class="modal-buttons">
 <button class="modal-btn-cancel" onclick="hideDeleteModal()">Abbrechen</button>
-<button class="modal-btn-delete" onclick="confirmDeleteAllData()">Löschen</button>
+<button class="modal-btn-delete" onclick="confirmDeleteAllData()">Loeschen</button>
 </div>
 </div>
 </div>
