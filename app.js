@@ -63,8 +63,15 @@ function dismissInstall() {
 function init() {
     loadData();
     loadSettings();
+    setTodayAsDefault();
     updateDataTable();
     updateCharts();
+}
+
+// Setze heutiges Datum als Standard
+function setTodayAsDefault() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('datum').value = today;
 }
 
 // Tab Wechsel
@@ -137,32 +144,62 @@ function saveSettings() {
 
 // Messung speichern
 function saveMeasurement() {
+    const datum = document.getElementById('datum').value;
     const gewicht = parseFloat(document.getElementById('gewicht').value);
     const muskel = parseFloat(document.getElementById('muskelanteil').value);
     const fett = parseFloat(document.getElementById('fettanteil').value);
+    
+    if (!datum) {
+        alert('Bitte wähle ein Datum aus!');
+        return;
+    }
     
     if (!gewicht || !muskel || !fett) {
         alert('Bitte fülle alle Felder aus!');
         return;
     }
     
-    const measurement = {
-        datum: new Date().toISOString().split('T')[0],
-        gewicht: gewicht,
-        muskelanteil: muskel,
-        fettanteil: fett,
-        id: Date.now()
-    };
+    // Prüfe ob bereits ein Eintrag für dieses Datum existiert
+    const existingIndex = measurements.findIndex(m => m.datum === datum);
     
-    measurements.push(measurement);
+    if (existingIndex !== -1) {
+        // Frage ob überschreiben
+        if (confirm(`Für den ${datum} existiert bereits ein Eintrag. Möchtest du ihn überschreiben?`)) {
+            measurements[existingIndex] = {
+                datum: datum,
+                gewicht: gewicht,
+                muskelanteil: muskel,
+                fettanteil: fett,
+                id: measurements[existingIndex].id
+            };
+        } else {
+            return;
+        }
+    } else {
+        // Neuen Eintrag hinzufügen
+        const measurement = {
+            datum: datum,
+            gewicht: gewicht,
+            muskelanteil: muskel,
+            fettanteil: fett,
+            id: Date.now()
+        };
+        measurements.push(measurement);
+    }
+    
     saveData();
     
-    // Felder leeren
+    // Felder leeren (außer Datum)
     document.getElementById('gewicht').value = '';
     document.getElementById('muskelanteil').value = '';
     document.getElementById('fettanteil').value = '';
     
     alert('✅ Daten gespeichert!');
+    
+    // Aktualisiere Tabelle falls im Daten-Tab
+    if (document.getElementById('daten').classList.contains('active')) {
+        updateDataTable();
+    }
 }
 
 // Zeitraum setzen

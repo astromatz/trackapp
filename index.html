@@ -110,6 +110,7 @@ font-size: 14px;
 }
 
 input[type="number"],
+input[type="date"],
 select {
 width: 100%;
 padding: 15px;
@@ -121,6 +122,7 @@ background: white;
 }
 
 input[type="number"]:focus,
+input[type="date"]:focus,
 select:focus {
 outline: none;
 border-color: #667eea;
@@ -441,7 +443,12 @@ cursor: pointer;
 <!-- EINGABE TAB -->
 <div id="eingabe" class="tab-content active">
 <h2>Hallo!</h2>
-<p style="margin-bottom: 20px; color: #666; font-size: 14px;">Bitte gib deine Werte von heute ein:</p>
+<p style="margin-bottom: 20px; color: #666; font-size: 14px;">Bitte gib deine Werte ein:</p>
+
+<div class="input-group">
+<label>Datum</label>
+<input type="date" id="datum" style="font-size: 16px;">
+</div>
 
 <div class="input-group">
 <label>Gewicht (kg)</label>
@@ -457,113 +464,3 @@ cursor: pointer;
 <label>Fettanteil (%)</label>
 <input type="number" id="fettanteil" step="0.1" placeholder="18.5">
 </div>
-
-<button class="btn btn-primary" onclick="saveMeasurement()">Absenden</button>
-</div>
-
-<!-- ERGEBNISSE TAB -->
-<div id="ergebnisse" class="tab-content">
-<h2>Ergebnisse!</h2>
-
-<div class="time-buttons">
-<button class="time-btn active" onclick="setTimeRange(7)">Letzte 7 Tage</button>
-<button class="time-btn" onclick="setTimeRange(30)">Letzter Monat</button>
-<button class="time-btn" onclick="setTimeRange(90)">Letzte 3 Monate</button>
-<button class="time-btn" onclick="setTimeRange(365)">Letztes Jahr</button>
-<button class="time-btn" onclick="toggleCustomRange()" id="customBtn">Individuell</button>
-</div>
-
-<div class="custom-range" id="customRange">
-<label>Von:</label>
-<input type="date" id="dateFrom">
-<label>Bis:</label>
-<input type="date" id="dateTo">
-<button class="btn btn-secondary" onclick="applyCustomRange()">Anwenden</button>
-</div>
-
-<div class="chart-container">
-<div class="chart-title">Gewicht (kg)</div>
-<canvas id="chartGewicht"></canvas>
-</div>
-
-<div class="chart-container">
-<div class="chart-title">Muskelanteil (%)</div>
-<div class="healthy-range-label" id="muskelLabel" style="display:none;">✓ Gesunder Bereich</div>
-<canvas id="chartMuskel"></canvas>
-</div>
-
-<div class="chart-container">
-<div class="chart-title">Fettanteil (%)</div>
-<div class="healthy-range-label" id="fettLabel" style="display:none;">✓ Gesunder Bereich</div>
-<canvas id="chartFett"></canvas>
-</div>
-
-<div class="chart-container">
-<div class="chart-title">BMI</div>
-<div class="healthy-range-label" id="bmiLabel" style="display:none;">✓ Gesunder Bereich</div>
-<canvas id="chartBMI"></canvas>
-</div>
-</div>
-
-<!-- DATEN TAB -->
-<div id="daten" class="tab-content">
-<h2>Historische Daten</h2>
-
-<div class="export-buttons">
-<button class="btn btn-secondary" onclick="exportCSV()">📥 Export</button>
-<button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">📤 Import</button>
-<input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
-</div>
-
-<div id="dataTableContainer"></div>
-</div>
-
-<!-- EINSTELLUNGEN TAB -->
-<div id="einstellungen" class="tab-content">
-<h2>Einstellungen</h2>
-
-<div class="info-box">
-<strong>Hinweis:</strong> Die Angaben werden für die Berechnung und Bewertung deiner Gesundheitswerte benötigt.
-</div>
-
-<div class="settings-input">
-<label>Geschlecht:</label>
-<select id="geschlecht">
-<option value="">Bitte wählen</option>
-<option value="mann">Mann</option>
-<option value="frau">Frau</option>
-</select>
-</div>
-
-<div class="settings-input">
-<label>Körpergröße (cm):</label>
-<input type="number" id="groesse" step="1" placeholder="175">
-</div>
-
-<button class="btn btn-secondary" onclick="saveSettings()">Speichern</button>
-
-<div class="info-box" style="margin-top: 20px;">
-<strong>Daten löschen:</strong><br>
-Alle gespeicherten Messungen werden unwiderruflich gelöscht.
-</div>
-
-<button class="btn btn-secondary" style="background: #fee; color: #ef4444;" onclick="showDeleteModal()">🗑️ Alle Daten löschen</button>
-</div>
-</div>
-</div>
-
-<!-- Modal für Bestätigung -->
-<div id="deleteModal" class="modal">
-<div class="modal-content">
-<h2 style="color: #ef4444; margin-bottom: 15px;">⚠️ Achtung!</h2>
-<p style="color: #666; margin-bottom: 20px;">Möchtest du wirklich alle Daten unwiderruflich löschen?</p>
-<div class="modal-buttons">
-<button class="modal-btn-cancel" onclick="hideDeleteModal()">Abbrechen</button>
-<button class="modal-btn-delete" onclick="confirmDeleteAllData()">Löschen</button>
-</div>
-</div>
-</div>
-
-<script src="app.js"></script>
-</body>
-</html>
