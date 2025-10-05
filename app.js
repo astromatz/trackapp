@@ -319,21 +319,59 @@ function updateCharts() {
     // Extrahiere und formatiere Daten
     const labels = data.map(m => formatDate(m.datum));
     const gewichtData = data.map(m => m.gewicht);
-    const muskelData = data.map(m => m.muskelanteil);
-    const fettData = data.map(m => m.fettanteil);
     const bmiData = data.map(m => m.bmi);
+
+    // Conditional Forward-Fill nur NACH dem ersten echten Wert, davor null lassen
+    function forwardFillAfterFirstValue(series) {
+        let last = null;
+        return series.map(v => {
+            const val = (typeof v === 'number' && !Number.isNaN(v)) ? v : null;
+            if (val === null) {
+                return last === null ? null : last;
+            } else {
+                last = val;
+                return val;
+            }
+        });
+    }
+
+    // Rohserien mit null für fehlende Werte erzeugen
+    const muskelRaw = data.map(m => (typeof m.muskelanteil === 'number' && !Number.isNaN(m.muskelanteil)) ? m.muskelanteil : null);
+    const fettRaw   = data.map(m => (typeof m.fettanteil   === 'number' && !Number.isNaN(m.fettanteil))   ? m.fettanteil   : null);
+
+    // Forward-Fill anwenden: vor erstem Wert bleiben nulls bestehen
+    const muskelDataFF = forwardFillAfterFirstValue(muskelRaw);
+    const fettDataFF   = forwardFillAfterFirstValue(fettRaw);
+
+    // Optional: führende Nulls (vor dem ersten Messpunkt) aus Labels entfernen, damit keine "leere" Zeit angezeigt wird
+    function trimLeadingNulls(labelsArr, ...seriesArr) {
+        let firstIndex = 0;
+        const n = labelsArr.length;
+        outer: for (; firstIndex < n; firstIndex++) {
+            for (const s of seriesArr) {
+                if (s[firstIndex] != null) break outer;
+            }
+        }
+        return {
+            labels: labelsArr.slice(firstIndex),
+            series: seriesArr.map(s => s.slice(firstIndex))
+        };
+    }
+
+    // Für Muskel/Fett: getrimmte Labels und Serien verwenden
+    const trimmedMuskelFett = trimLeadingNulls(labels, muskelDataFF, fettDataFF);
 
     // Gewicht Chart
     updateChart('chartGewicht', chartGewicht, labels, gewichtData, 'Gewicht (kg)', '#3b82f6', null);
 
-    // Muskelanteil Chart mit gesundem Bereich
+    // Muskelanteil Chart mit gesundem Bereich (mit korrekt gefüllter Serie)
     const muskelRange = getHealthyMuscleRange();
-    updateChart('chartMuskel', chartMuskel, labels, muskelData, 'Muskelanteil (%)', '#10b981', muskelRange);
+    updateChart('chartMuskel', chartMuskel, trimmedMuskelFett.labels, trimmedMuskelFett.series[0], 'Muskelanteil (%)', '#10b981', muskelRange);
     document.getElementById('muskelLabel').style.display = muskelRange ? 'block' : 'none';
 
-    // Fettanteil Chart mit gesundem Bereich
+    // Fettanteil Chart mit gesundem Bereich (mit korrekt gefüllter Serie)
     const fettRange = getHealthyFatRange();
-    updateChart('chartFett', chartFett, labels, fettData, 'Fettanteil (%)', '#f59e0b', fettRange);
+    updateChart('chartFett', chartFett, trimmedMuskelFett.labels, trimmedMuskelFett.series[1], 'Fettanteil (%)', '#f59e0b', fettRange);
     document.getElementById('fettLabel').style.display = fettRange ? 'block' : 'none';
 
     // BMI Chart mit gesundem Bereich
@@ -358,7 +396,8 @@ function updateChart(canvasId, chartInstance, labels, data, label, color, health
         tension: 0.4,
         fill: true,
         pointRadius: 4,
-        pointHoverRadius: 6
+        pointHoverRadius: 6,
+        spanGaps: true
     }];
 
     // Add healthy range if provided
