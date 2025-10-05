@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gesundheitstracker-v3';  // v2 → v3
+const CACHE_NAME = 'gesundheitstracker-v4';  // v4 → v4
 const urlsToCache = [
   './',
   './index.html',
@@ -69,4 +69,5 @@ self.addEventListener('fetch', (event) => {
   );
 
 });
+
 
