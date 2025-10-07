@@ -531,7 +531,7 @@ function updateDataTable() {
         return;
     }
 
-    // Sortiere absteigend (neueste zuerst)
+    // Sortiere absteigend nach Datum (neueste zuerst)
     const sortedData = [...measurements].sort((a, b) => new Date(b.datum) - new Date(a.datum));
 
     let html = `
@@ -554,8 +554,8 @@ function updateDataTable() {
             <tr>
                 <td>${formatDateFull(m.datum)}</td>
                 <td>${m.gewicht.toFixed(1)} kg</td>
-                <td>${m.muskelanteil.toFixed(1)}%</td>
-                <td>${m.fettanteil.toFixed(1)}%</td>
+                <td>${(m.muskelanteil !== null && m.muskelanteil !== undefined && !isNaN(m.muskelanteil)) ? m.muskelanteil.toFixed(1) + '%' : '-'}</td>
+                <td>${(m.fettanteil !== null && m.fettanteil !== undefined && !isNaN(m.fettanteil)) ? m.fettanteil.toFixed(1) + '%' : '-'}</td>
                 <td>${m.bmi.toFixed(1)}</td>
                 <td>
                     <button class="edit-btn" onclick="editMeasurement('${m.datum}')">Bearbeiten</button>
@@ -576,6 +576,7 @@ function formatDateFull(dateString) {
     const year = date.getFullYear();
     return `${day}.${month}.${year}`;
 }
+
 
 function deleteMeasurement(datum) {
     if (confirm('Möchtest du diese Messung wirklich löschen?')) {
