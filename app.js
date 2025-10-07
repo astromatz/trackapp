@@ -64,14 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Tab-Wechsel
-function switchTab(tabName) {
+function switchTab(tabName, ev) {
+const evt = ev || (typeof event !== 'undefined' ? event : null);
     // Entferne active von allen Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
     // Aktiviere gewählten Tab
-    if (typeof event !== 'undefined' && event.target) {
-        event.target.classList.add('active');
+    if (evt && evt.target) {
+        evt.target.classList.add('active');
     }
     const tabEl = document.getElementById(tabName);
     if (tabEl) tabEl.classList.add('active');
@@ -79,6 +80,7 @@ function switchTab(tabName) {
     if (tabName === 'ergebnisse') updateCharts();
     if (tabName === 'daten') updateDataTable();
 }
+
 
 // Hilfsfunktion: Letzten gültigen Wert finden
 function getLastValidValue(field) {
@@ -202,19 +204,22 @@ function saveSettings() {
 let currentTimeRange = 7;
 let customRangeActive = false;
 
-function setTimeRange(days) {
-    currentTimeRange = days;
+function setTimeRange(days, ev) {
+currentTimeRange = days;
     customRangeActive = false;
 
     // Update Button States
     document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
-    if (typeof event !== 'undefined' && event.target) event.target.classList.add('active');
+    const evt = ev || (typeof event !== 'undefined' ? event : null);
+    if (evt && evt.target) evt.target.classList.add('active');
 
     // Hide custom range
-    document.getElementById('customRange').classList.remove('active');
+    const cr = document.getElementById('customRange');
+    if (cr) cr.classList.remove('active');
 
     updateCharts();
 }
+
 
 function toggleCustomRange() {
     const customRange = document.getElementById('customRange');
@@ -306,11 +311,12 @@ function updateCharts() {
         // Zeige "Keine Daten" Nachricht
         ['chartGewicht', 'chartMuskel', 'chartFett', 'chartBMI'].forEach(id => {
             const canvas = document.getElementById(id);
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = '14px Arial';
-            ctx.fillStyle = '#
-ctx.textAlign = 'center';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
             ctx.fillText('Keine Daten verfügbar', canvas.width / 2, canvas.height / 2);
         });
         return;

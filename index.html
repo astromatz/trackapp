@@ -425,10 +425,10 @@ input[type="file"] {
     <h1>Gesundheitstracker</h1>
 
     <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('eingabe')">Eingabe</button>
-      <button class="tab-btn" onclick="switchTab('ergebnisse')">Ergebnisse</button>
-      <button class="tab-btn" onclick="switchTab('daten')">Daten</button>
-      <button class="tab-btn" onclick="switchTab('einstellungen')">Einstellungen</button>
+      <button class="tab-btn active" onclick="switchTab('eingabe', event)">Eingabe</button>
+      <button class="tab-btn" onclick="switchTab('ergebnisse', event)">Ergebnisse</button>
+      <button class="tab-btn" onclick="switchTab('daten', event)">Daten</button>
+      <button class="tab-btn" onclick="switchTab('einstellungen', event)">Einstellungen</button>
     </div>
 
     <div id="eingabe" class="tab-content active">
@@ -462,10 +462,10 @@ input[type="file"] {
       <h2>Ergebnisse!</h2>
 
       <div class="time-buttons">
-        <button class="time-btn active" onclick="setTimeRange(7)">Letzte 7 Tage</button>
-        <button class="time-btn" onclick="setTimeRange(30)">Letzter Monat</button>
-        <button class="time-btn" onclick="setTimeRange(90)">Letzte 3 Monate</button>
-        <button class="time-btn" onclick="setTimeRange(365)">Letztes Jahr</button>
+        <button class="time-btn active" onclick="setTimeRange(7, event)">Letzte 7 Tage</button>
+        <button class="time-btn" onclick="setTimeRange(30, event)">Letzter Monat</button>
+        <button class="time-btn" onclick="setTimeRange(90, event)">Letzte 3 Monate</button>
+        <button class="time-btn" onclick="setTimeRange(365, event)">Letztes Jahr</button>
         <button class="time-btn" onclick="toggleCustomRange()" id="customBtn">Individuell</button>
       </div>
 
