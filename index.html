@@ -259,6 +259,17 @@ select:focus {
   border-bottom: none;
 }
 
+.edit-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
 .delete-btn {
   background: #ef4444;
   color: white;
@@ -542,6 +553,37 @@ input[type="file"] {
     <div class="modal-buttons">
       <button class="modal-btn-cancel" onclick="hideDeleteModal()">Abbrechen</button>
       <button class="modal-btn-delete" onclick="confirmDeleteAllData()">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content" style="max-width: 450px;">
+    <h2 style="color: #667eea; margin-bottom: 20px;">Messung bearbeiten</h2>
+    
+    <div class="input-group">
+      <label>Datum</label>
+      <input type="date" id="editDatum" style="font-size: 16px;">
+    </div>
+
+    <div class="input-group">
+      <label>Gewicht (kg) <span style="color: #ef4444;">*</span></label>
+      <input type="number" id="editGewicht" step="0.1" placeholder="75.5">
+    </div>
+
+    <div class="input-group">
+      <label>Muskelanteil (%)</label>
+      <input type="number" id="editMuskelanteil" step="0.1" placeholder="35.5">
+    </div>
+
+    <div class="input-group">
+      <label>Fettanteil (%)</label>
+      <input type="number" id="editFettanteil" step="0.1" placeholder="18.5">
+    </div>
+
+    <div class="modal-buttons">
+      <button class="modal-btn-cancel" onclick="hideEditModal()">Abbrechen</button>
+      <button class="modal-btn-delete" style="background: #667eea;" onclick="saveEditedMeasurement()">Speichern</button>
     </div>
   </div>
 </div>

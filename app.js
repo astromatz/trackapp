@@ -309,8 +309,8 @@ function updateCharts() {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = '14px Arial';
-            ctx.fillStyle = '#999';
-            ctx.textAlign = 'center';
+            ctx.fillStyle = '#
+ctx.textAlign = 'center';
             ctx.fillText('Keine Daten verfügbar', canvas.width / 2, canvas.height / 2);
         });
         return;
@@ -544,7 +544,10 @@ function updateDataTable() {
                 <td>${m.muskelanteil.toFixed(1)}%</td>
                 <td>${m.fettanteil.toFixed(1)}%</td>
                 <td>${m.bmi.toFixed(1)}</td>
-                <td><button class="delete-btn" onclick="deleteMeasurement('${m.datum}')">Löschen</button></td>
+                <td>
+                    <button class="edit-btn" onclick="editMeasurement('${m.datum}')">Bearbeiten</button>
+                    <button class="delete-btn" onclick="deleteMeasurement('${m.datum}')">Löschen</button>
+                </td>
             </tr>
         `;
     });
@@ -586,6 +589,90 @@ function confirmDeleteAllData() {
     updateDataTable();
     updateCharts();
     alert('Alle Daten wurden gelöscht!');
+}
+
+// Edit-Modal Funktionen
+let editingDate = null;
+
+function editMeasurement(datum) {
+    const measurement = measurements.find(m => m.datum === datum);
+    if (!measurement) return;
+
+    editingDate = datum;
+
+    // Fülle Modal mit Werten
+    document.getElementById('editDatum').value = measurement.datum;
+    document.getElementById('editGewicht').value = measurement.gewicht;
+    document.getElementById('editMuskelanteil').value = measurement.muskelanteil;
+    document.getElementById('editFettanteil').value = measurement.fettanteil;
+
+    // Zeige Modal
+    document.getElementById('editModal').classList.add('active');
+}
+
+function hideEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    editingDate = null;
+}
+
+function saveEditedMeasurement() {
+    const datum = document.getElementById('editDatum').value;
+    const gewicht = parseFloat(document.getElementById('editGewicht').value);
+    const muskelanteil = parseFloat(document.getElementById('editMuskelanteil').value);
+    const fettanteil = parseFloat(document.getElementById('editFettanteil').value);
+
+    // Validierung
+    if (!datum || !gewicht || isNaN(gewicht)) {
+        alert('Bitte gib mindestens Datum und Gewicht ein!');
+        return;
+    }
+
+    if (!settings.groesse) {
+        alert('Bitte gib zuerst deine Körpergröße in den Einstellungen an!');
+        return;
+    }
+
+    // Berechne BMI
+    const groesseM = settings.groesse / 100;
+    const bmi = gewicht / (groesseM * groesseM);
+
+    // Finde Index der zu bearbeitenden Messung
+    const index = measurements.findIndex(m => m.datum === editingDate);
+    
+    if (index === -1) {
+        alert('Fehler: Messung nicht gefunden!');
+        return;
+    }
+
+    // Wenn Datum geändert wurde, prüfe auf Duplikate
+    if (datum !== editingDate) {
+        const duplicateIndex = measurements.findIndex((m, i) => m.datum === datum && i !== index);
+        if (duplicateIndex >= 0) {
+            alert('Für dieses Datum existiert bereits eine Messung!');
+            return;
+        }
+    }
+
+    // Update Messung
+    measurements[index] = {
+        datum,
+        gewicht,
+        muskelanteil: isNaN(muskelanteil) ? 0 : muskelanteil,
+        fettanteil: isNaN(fettanteil) ? 0 : fettanteil,
+        bmi: parseFloat(bmi.toFixed(1))
+    };
+
+    // Sortiere nach Datum
+    measurements.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+
+    // Speichern
+    localStorage.setItem('measurements', JSON.stringify(measurements));
+
+    // Modal schließen und UI aktualisieren
+    hideEditModal();
+    alert('Messung aktualisiert!');
+    updateCharts();
+    updateDataTable();
 }
 
 // CSV Export
