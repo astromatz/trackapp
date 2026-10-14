@@ -129,6 +129,19 @@ select:focus {
   border-color: #667eea;
 }
 
+/* Datumsfelder: iOS-Mindestbreite aufheben, damit das Feld nicht über den Rand ragt */
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 56px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+
 .btn {
   width: 100%;
   padding: 18px;
@@ -581,6 +594,13 @@ input[type="file"] {
   margin: 25px 0;
 }
 
+.version-label {
+  text-align: center;
+  color: #999;
+  font-size: 11px;
+  margin-top: 20px;
+}
+
 @media (max-width: 400px) {
   h1 { font-size: 20px; }
   .tab-btn { font-size: 10px; padding: 8px 2px; }
@@ -786,6 +806,8 @@ input[type="file"] {
 
       <button class="btn btn-secondary" style="background: #fee; color: #ef4444;" onclick="showDeleteModal()">Alle Daten löschen</button>
     </div>
+
+    <div class="version-label">Version 6</div>
   </div>
 </div>
 
@@ -864,6 +886,5 @@ input[type="file"] {
 </div>
 
 <script src="app.js"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"f0f03d0605bf45f1a3b17cf7d5e6861f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
